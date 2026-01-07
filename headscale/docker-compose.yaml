@@ -1,0 +1,13 @@
+services:
+  headscale:
+    container_name: headscale
+    image: headscale/headscale:0.23.0
+    restart: unless-stopped
+    ports:
+      - 8080:8080
+    volumes:
+      - /srv/docker/headscale/config:/etc/headscale
+      - /srv/docker/headscale/data:/var/lib/headscale
+    entrypoint: headscale serve
+    env:
+      - /srv/docker/headscale/env/headscale.env

@@ -1,0 +1,3 @@
+https://hs.yourdomain.com.au {
+    reverse_proxy * http://headscale:8080
+}
