@@ -1,20 +1,22 @@
 services:
   caddy:
-    image: caddy:latest
+    image: caddy:2.10.2
     container_name: caddy
     restart: always
-    networks:
-      reverseproxy-nw:
     stdin_open: true
     tty: true
     volumes:
-      - /srv/docker/caddy/data:/data
-      - /srv/docker/caddy/config:/config
+      - /srv/selfhosted/caddy/data:/data
+      - /srv/selfhosted/caddy/config:/config
       - /etc/localtime:/etc/localtime:ro
     ports:
       - 80:80
       - 443:443
     entrypoint: /usr/bin/caddy run --adapter caddyfile --config /config/Caddyfile
+    env_file:
+      - env/caddy.env
+    networks:
+      - reverseproxy-nw
 
 networks:
   reverseproxy-nw:

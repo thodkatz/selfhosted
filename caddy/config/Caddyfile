@@ -1,3 +1,7 @@
-https://hs.yourdomain.com.au {
+{$HEADSCALE_DOMAIN} {
+    handle /web* {
+        reverse_proxy http://headscale-ui:8080
+    }
+
     reverse_proxy * http://headscale:8080
 }
