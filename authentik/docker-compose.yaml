@@ -1,0 +1,76 @@
+
+
+services:
+  postgresql:
+    image: postgres:16-alpine
+    container_name: authentik-postgresql
+    env_file:
+      - .env    
+    restart: unless-stopped
+    volumes:
+      - /srv/selfhosted/authentik/data/postgresql:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: ${PG_PASS}
+      POSTGRES_USER: authentik
+      POSTGRES_DB: authentik
+
+  redis:
+    image: redis:7
+    container_name: authentik-redis
+    env_file:
+      - .env    
+    restart: unless-stopped
+    volumes:
+      - /srv/selfhosted/authentik/data/redis:/data
+
+  server:
+    image: ghcr.io/goauthentik/server:2025.10.3
+    container_name: authentik-server
+    env_file:
+      - .env    
+    restart: unless-stopped
+    command: server
+    environment:
+      AUTHENTIK_REDIS__HOST: redis
+      AUTHENTIK_POSTGRESQL__HOST: postgresql
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+    networks:
+      - reverseproxy-nw
+      - default
+    expose:
+      - 9000
+    volumes:
+      - /srv/selfhosted/authentik/data/media:/media
+      - /srv/selfhosted/authentik/config/custom-templates:/templates
+    depends_on:
+      - postgresql
+      - redis
+
+  worker:
+    image: ghcr.io/goauthentik/server:2025.10.3
+    container_name: authentik-worker
+    env_file:
+      - .env    
+    restart: unless-stopped
+    command: worker
+    environment:
+      AUTHENTIK_REDIS__HOST: redis
+      AUTHENTIK_POSTGRESQL__HOST: postgresql
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+    volumes:
+      - /srv/selfhosted/authentik/data/media:/media
+      - /srv/selfhosted/authentik/data/certs:/certs
+      - /srv/selfhosted/authentik/config/custom-templates:/templates
+    depends_on:
+      - postgresql
+      - redis
+
+networks:
+  reverseproxy-nw:
+    external: true

@@ -1,7 +1,39 @@
-{$HEADSCALE_DOMAIN} {
+(healthcheck) {
+    health_uri /health
+    health_interval 30s
+    health_timeout 5s
+}
+
+(common) {
+    encode gzip
+
+    header {
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    log {
+        output stderr
+        format console
+        level INFO
+    }
+}
+
+headscale.thodkatz.com {
+    import common
+
     handle /web* {
         reverse_proxy http://headscale-ui:8080
     }
 
-    reverse_proxy * http://headscale:8080
+    handle {
+        reverse_proxy http://headscale:8080
+    }
+}
+
+auth.thodkatz.com {
+    import common
+    reverse_proxy http://authentik-server:9000
 }

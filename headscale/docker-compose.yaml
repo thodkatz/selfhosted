@@ -1,20 +1,22 @@
 services:
   headscale:
     container_name: headscale
-    image: headscale/headscale:0.23.0
+    image: headscale/headscale:0.27.1
+    env_file:
+      - .env
     restart: unless-stopped
     volumes:
       - /srv/selfhosted/headscale/config:/etc/headscale
       - /srv/selfhosted/headscale/data:/var/lib/headscale
     entrypoint: headscale serve
-    env_file:
-      - /srv/selfhosted/headscale/env/headscale.env
     networks:
       - reverseproxy-nw
 
   headscale-ui:
-    container_name: headscale-ui
     image: ghcr.io/gurucomputing/headscale-ui:latest
+    container_name: headscale-ui    
+    env_file:
+      - .env    
     restart: unless-stopped
     networks:
       - reverseproxy-nw

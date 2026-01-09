@@ -2,6 +2,8 @@ services:
   caddy:
     image: caddy:2.10.2
     container_name: caddy
+    env_file:
+      - .env    
     restart: always
     stdin_open: true
     tty: true
@@ -13,8 +15,6 @@ services:
       - 80:80
       - 443:443
     entrypoint: /usr/bin/caddy run --adapter caddyfile --config /config/Caddyfile
-    env_file:
-      - env/caddy.env
     networks:
       - reverseproxy-nw
 
