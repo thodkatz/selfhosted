@@ -1,0 +1,11 @@
+services:
+  tsdproxy:
+    image: almeidapaulopt/tsdproxy:1
+    container_name: tsdproxy
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /srv/selfhosted/tsdproxy/data:/data
+      - /srv/selfhosted/tsdproxy/config:/config
+    ports:
+      - 127.0.0.1:8080:8080

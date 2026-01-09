@@ -14,13 +14,13 @@ services:
 
   headscale-ui:
     image: ghcr.io/gurucomputing/headscale-ui:latest
-    container_name: headscale-ui    
+    container_name: headscale-ui
     env_file:
       - .env    
     restart: unless-stopped
     networks:
       - reverseproxy-nw
-     
+
 networks:
   reverseproxy-nw:
     external: true
