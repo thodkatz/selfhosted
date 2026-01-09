@@ -1,11 +1,9 @@
-version: '3.8'
-
 services:
 
   loki:
     image: grafana/loki:${GRAFANA_LOKI_VERSION:-3.5.2}
     ports:
-      - 3100:3100/tcp
+      - 127.0.0.1:3100:3100/tcp
     volumes:
       - /srv/selfhosted/grafana/config/loki-config.yaml:/etc/loki/local-config.yaml
     command: -config.file=/etc/loki/local-config.yaml
@@ -17,7 +15,7 @@ services:
        - --web.enable-remote-write-receiver
        - --config.file=/etc/prometheus/prometheus.yml
      ports:
-      - 9090:9090/tcp
+      - 127.0.0.1:9090:9090/tcp
      volumes:
         - /srv/selfhosted/grafana/config/prom-config.yaml:/etc/prometheus/prometheus.yml
 
@@ -29,7 +27,7 @@ services:
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_BASIC_ENABLED=false
     ports:
-      - 3000:3000/tcp
+      - 127.0.0.1:3000:3000/tcp
     entrypoint:
        - sh
        - -euc
@@ -57,3 +55,5 @@ services:
            editable: false
          EOF
          /run.sh
+    volumes:
+        - /srv/selfhosted/grafana/data:/var/lib/grafana # sudo chown -R 472:472 /srv/selfhosted/grafana
