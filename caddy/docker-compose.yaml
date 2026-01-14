@@ -2,8 +2,6 @@ services:
   caddy:
     image: caddy:2.10.2
     container_name: caddy
-    env_file:
-      - .env    
     restart: always
     stdin_open: true
     tty: true

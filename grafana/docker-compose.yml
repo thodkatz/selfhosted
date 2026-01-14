@@ -2,6 +2,7 @@ services:
 
   loki:
     image: grafana/loki:${GRAFANA_LOKI_VERSION:-3.5.2}
+    container_name: grafana-loki
     ports:
       - 127.0.0.1:3100:3100/tcp
     volumes:
@@ -11,6 +12,7 @@ services:
 
   prometheus:
      image: prom/prometheus:${PROMETHEUS_VERSION:-v3.5.0}
+     container_name: grafana-prometheus
      command:
        - --web.enable-remote-write-receiver
        - --config.file=/etc/prometheus/prometheus.yml
@@ -22,6 +24,7 @@ services:
 
   grafana:
     image: grafana/grafana:${GRAFANA_VERSION:-12.0.2}
+    container_name: grafana
     environment:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
       - GF_AUTH_ANONYMOUS_ENABLED=true
@@ -57,3 +60,10 @@ services:
          /run.sh
     volumes:
         - /srv/selfhosted/grafana/data:/var/lib/grafana # sudo chown -R 472:472 /srv/selfhosted/grafana
+    networks:
+      - reverseproxy-nw
+      - default
+
+networks:
+  reverseproxy-nw:
+    external: true

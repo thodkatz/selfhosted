@@ -21,10 +21,6 @@ services:
   seafile:
     image: seafileltd/seafile-mc:11.0-latest
     container_name: seafile
-    labels:
-      tsdproxy.enable: "true"
-      tsdproxy.service: "seafile"
-      tsdproxy.port: "80"
     volumes:
       - /srv/selfhosted/data/seafile:/shared   # Required, specifies the path to Seafile data persistent store.
     environment:
