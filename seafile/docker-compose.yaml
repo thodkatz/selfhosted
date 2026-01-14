@@ -8,15 +8,11 @@ services:
       - MARIADB_AUTO_UPGRADE=1
     volumes:
       - /srv/selfhosted/data/seafile/mysql:/var/lib/mysql  # Required, specifies the path to MySQL data persistent store.
-    networks:
-      - seafile-net
 
   memcached:
     image: memcached:1.6.18
     container_name: seafile-memcached
     entrypoint: memcached -m 256
-    networks:
-      - seafile-net
           
   seafile:
     image: seafileltd/seafile-mc:11.0-latest
@@ -35,7 +31,10 @@ services:
       - db
       - memcached
     networks:
-      - seafile-net
+      - reverseproxy-nw
+      - default
+
 
 networks:
-  seafile-net:
+  reverseproxy-nw:
+    external: true
