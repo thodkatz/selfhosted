@@ -45,7 +45,11 @@ grafana.thodkatz.ts.net {
 
 seafile.thodkatz.ts.net {
     tls internal
-
     reverse_proxy /seafhttp* seafile:8082
     reverse_proxy http://seafile:80
+}
+
+portainer.thodkatz.ts.net {
+    tls internal
+    reverse_proxy http://portainer:9000
 }
