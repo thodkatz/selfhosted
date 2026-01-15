@@ -53,3 +53,8 @@ portainer.thodkatz.ts.net {
     tls internal
     reverse_proxy http://portainer:9000
 }
+
+uptime-kuma.thodkatz.ts.net {
+    tls internal
+    reverse_proxy http://uptime-kuma:3001
+}

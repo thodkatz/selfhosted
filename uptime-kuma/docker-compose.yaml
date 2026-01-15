@@ -1,0 +1,16 @@
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:2
+    container_name: uptime-kuma
+    restart: unless-stopped
+    volumes:
+      - /srv/selfhosted/uptime-kuma/data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock # monitor docker containers
+    ports:
+      - "127.0.0.1:3001:3001"
+    networks:
+      - reverseproxy-nw
+
+networks:
+  reverseproxy-nw:
+    external: true

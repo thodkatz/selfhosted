@@ -6,8 +6,8 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /srv/selfhosted/data/portainer:/data
-    ports:
-      - 127.0.0.1:9443:9443
+    #ports:
+      #- 127.0.0.1:9443:9443
       #- 127.0.0.1:8000:8000  # Remove if you do not intend to use Edge Agents
     networks:
       - reverseproxy-nw
