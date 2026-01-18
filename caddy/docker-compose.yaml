@@ -15,6 +15,10 @@ services:
     entrypoint: /usr/bin/caddy run --adapter caddyfile --config /config/Caddyfile
     networks:
       - reverseproxy-nw
+    labels:
+      wud.watch: true
+      wud.tag.include: '^\d+\.\d+\.\d+$$'
+      wud.link.template: 'https://github.com/caddyserver/caddy/releases/tag/$${major}.$${minor}.$${patch}'
 
 networks:
   reverseproxy-nw:

@@ -1,7 +1,7 @@
 services:
   portainer:
     container_name: portainer
-    image: portainer/portainer-ce:2.33.6
+    image: portainer/portainer-ce:2.37.0
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -11,6 +11,10 @@ services:
       #- 127.0.0.1:8000:8000  # Remove if you do not intend to use Edge Agents
     networks:
       - reverseproxy-nw
+    labels:
+      wud.watch: true
+      wud.tag.include: '^\d+\.\d+\.\d+$$'
+      wud.link.template: 'https://github.com/portainer/portainer/releases/tag/$${major}.$${minor}.$${patch}'
 
 volumes:
   portainer-data:

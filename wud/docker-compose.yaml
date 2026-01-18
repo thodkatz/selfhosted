@@ -1,0 +1,26 @@
+services:
+  whatsupdocker:
+    image: getwud/wud:8.1.1
+    container_name: wud
+    env_file:
+      - .env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /srv/selfhosted/wud/data:/store
+    ports:
+      - 127.0.0.1:3002:3000
+    labels:
+      wud.watch: true
+      wud.tag.include: '^\d+\.\d+\.\d+$$'
+      wud.link.template: 'https://github.com/getwud/wud/releases/tag/$${major}.$${minor}.$${patch}'
+    environment:
+      WUD_TRIGGER_DISCORD_1_URL: '${DISCORD_WEBHOOK}'
+      WUD_TRIGGER_DISCORD_1_BOTUSERNAME: 'WUD'
+      WUD_WATCHER_LOCAL_WATCHBYDEFAULT: false
+      #WUD_WATCHER_LOCAL_WATCHALL: true
+    networks:
+      - reverseproxy-nw
+
+networks:
+  reverseproxy-nw:
+    external: true

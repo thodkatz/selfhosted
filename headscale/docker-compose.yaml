@@ -11,6 +11,10 @@ services:
     entrypoint: headscale serve
     networks:
       - reverseproxy-nw
+    labels:
+      wud.watch: true
+      wud.tag.include: '^\d+\.\d+\.\d+$$'
+      wud.link.template: 'https://github.com/juanfont/headscale/releases/tag/$${major}.$${minor}.$${patch}'
 
   headscale-ui:
     image: ghcr.io/gurucomputing/headscale-ui:latest
@@ -20,6 +24,10 @@ services:
     restart: unless-stopped
     networks:
       - reverseproxy-nw
+    labels:
+      wud.watch: true
+      wud.tag.include: latest
+      wud.tag.digest: true
 
 networks:
   reverseproxy-nw:

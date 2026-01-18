@@ -13,25 +13,23 @@ services:
       POSTGRES_PASSWORD: ${PG_PASS}
       POSTGRES_USER: authentik
       POSTGRES_DB: authentik
-
-  redis:
-    image: redis:7
-    container_name: authentik-redis
-    env_file:
-      - .env
-    restart: unless-stopped
-    volumes:
-      - /srv/selfhosted/authentik/data/redis:/data
+    healthcheck:
+      interval: 30s
+      retries: 5
+      start_period: 20s
+      test:
+      - CMD-SHELL
+      - pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}
+      timeout: 5s
 
   server:
-    image: ghcr.io/goauthentik/server:2025.10.3
+    image: ghcr.io/goauthentik/server:2025.12.1
     container_name: authentik-server
     env_file:
       - .env
     restart: unless-stopped
     command: server
     environment:
-      AUTHENTIK_REDIS__HOST: redis
       AUTHENTIK_POSTGRESQL__HOST: postgresql
       AUTHENTIK_POSTGRESQL__USER: authentik
       AUTHENTIK_POSTGRESQL__NAME: authentik
@@ -43,14 +41,14 @@ services:
     expose:
       - 9000
     volumes:
-      - /srv/selfhosted/authentik/data/media:/media
+      - /srv/selfhosted/authentik/data/data:/data
       - /srv/selfhosted/authentik/config/custom-templates:/templates
     depends_on:
-      - postgresql
-      - redis
+      postgresql:
+        condition: service_healthy
 
   worker:
-    image: ghcr.io/goauthentik/server:2025.10.3
+    image: ghcr.io/goauthentik/server:2025.12.1
     container_name: authentik-worker
     env_file:
       - .env
@@ -64,12 +62,16 @@ services:
       AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
       AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
     volumes:
-      - /srv/selfhosted/authentik/data/media:/media
+      - /srv/selfhosted/authentik/data/data:/data
       - /srv/selfhosted/authentik/data/certs:/certs
       - /srv/selfhosted/authentik/config/custom-templates:/templates
     depends_on:
-      - postgresql
-      - redis
+      postgresql:
+        condition: service_healthy
+    labels:
+      wud.watch: true
+      wud.tag.include: '^\d+\.\d+\.\d+$$'
+      wud.link.template: 'https://github.com/goauthentik/authentik/releases/tag/$${major}.$${minor}.$${patch}'
 
 networks:
   reverseproxy-nw:

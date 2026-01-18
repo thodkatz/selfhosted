@@ -38,10 +38,6 @@ auth.thodkatz.com {
     reverse_proxy http://authentik-server:9000
 }
 
-grafana.thodkatz.ts.net {
-    tls internal
-    reverse_proxy http://grafana:3000
-}
 
 seafile.thodkatz.ts.net {
     tls internal
@@ -53,7 +49,17 @@ portainer.thodkatz.ts.net {
     reverse_proxy http://portainer:9000
 }
 
+grafana.thodkatz.ts.net {
+    tls internal
+    reverse_proxy http://grafana:3000
+}
+
 uptime-kuma.thodkatz.ts.net {
     tls internal
     reverse_proxy http://uptime-kuma:3001
+}
+
+wud.thodkatz.ts.net {
+    tls internal
+    reverse_proxy http://wud:3000
 }

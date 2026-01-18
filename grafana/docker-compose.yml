@@ -1,17 +1,21 @@
 services:
 
   loki:
-    image: grafana/loki:${GRAFANA_LOKI_VERSION:-3.5.2}
+    image: grafana/loki:${GRAFANA_LOKI_VERSION:-3.6.3}
     container_name: grafana-loki
     ports:
       - 127.0.0.1:3100:3100/tcp
     volumes:
       - /srv/selfhosted/grafana/config/loki-config.yaml:/etc/loki/local-config.yaml
     command: -config.file=/etc/loki/local-config.yaml
+    labels:
+      wud.watch: true
+      wud.tag.include: '^\d+\.\d+\.\d+$$'
+      wud.link.template: 'https://github.com/grafana/loki/releases/tag/$${major}.$${minor}.$${patch}'
 
 
   prometheus:
-     image: prom/prometheus:${PROMETHEUS_VERSION:-v3.5.0}
+     image: prom/prometheus:${PROMETHEUS_VERSION:-v3.9.1}
      container_name: grafana-prometheus
      command:
        - --web.enable-remote-write-receiver
@@ -20,10 +24,14 @@ services:
       - 127.0.0.1:9090:9090/tcp
      volumes:
         - /srv/selfhosted/grafana/config/prom-config.yaml:/etc/prometheus/prometheus.yml
+     labels:
+      wud.watch: true
+      wud.tag.include: '^\d+\.\d+\.\d+$$'
+      wud.link.template: 'https://github.com/prometheus/prometheus/releases/tag/$${major}.$${minor}.$${patch}'
 
 
   grafana:
-    image: grafana/grafana:${GRAFANA_VERSION:-12.0.2}
+    image: grafana/grafana:${GRAFANA_VERSION:-12.3.1}
     container_name: grafana
     environment:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
@@ -63,6 +71,10 @@ services:
     networks:
       - reverseproxy-nw
       - default
+    labels:
+      wud.watch: true
+      wud.tag.include: '^\d+\.\d+\.\d+$$'
+      wud.link.template: 'https://github.com/grafana/grafana/releases/tag/$${major}.$${minor}.$${patch}'
 
 networks:
   reverseproxy-nw:
