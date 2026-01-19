@@ -76,6 +76,29 @@ services:
       wud.tag.include: '^\d+\.\d+\.\d+$$'
       wud.link.template: 'https://github.com/grafana/grafana/releases/tag/$${major}.$${minor}.$${patch}'
 
+  alloy:
+   image: grafana/alloy:${GRAFANA_ALLOY_VERSION:-v1.12.2}
+   container_name: grafana-alloy
+   privileged: true
+   ports:
+     - 127.0.0.1:12345:12345
+   environment:
+      ALLOY_DEPLOY_MODE: docker
+   volumes:    
+      - ./config/config.alloy:/etc/alloy/config.alloy:ro
+      - /dev/disk/:/dev/disk:ro
+      - /proc:/rootproc:ro    
+      - /:/rootfs:ro
+      - /sys:/sys:ro
+      - /run:/run:ro
+      - /var/log:/var/log:ro
+      - /var/lib/docker/:/var/lib/docker/:ro
+      - /run/udev/data:/run/udev/data:ro      
+   command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
+   labels:
+      wud.watch: true
+      wud.tag.include: '^\d+\.\d+\.\d+$$'        
+
 networks:
   reverseproxy-nw:
     external: true

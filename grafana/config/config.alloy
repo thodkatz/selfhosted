@@ -1,4 +1,22 @@
-// This block relabels metrics coming from node_exporter to add standard labels
+loki.write "local" {
+    endpoint {
+        // Send logs to a locally running Loki instance
+        url ="http://loki:3100/loki/api/v1/push"
+    }
+}
+
+prometheus.remote_write "local" {
+  endpoint {
+    // Send metrics to a locally running Prometheus instance
+    url = "http://prometheus:9090/api/v1/write"
+  }
+}
+
+livedebugging{}
+
+// source: https://github.com/grafana/alloy-scenarios/tree/main/linux
+// METRICS SYSTEM 
+
 discovery.relabel "integrations_node_exporter" {
   targets = prometheus.exporter.unix.integrations_node_exporter.targets
 
@@ -9,126 +27,129 @@ discovery.relabel "integrations_node_exporter" {
   }
 
   rule {
-    // Set a standard job name for all node_exporter metrics
     target_label = "job"
-    replacement = "integrations/node_exporter"
+    replacement = "system-metrics"
   }
 }
 
-// Configure the node_exporter integration to collect system metrics
 prometheus.exporter.unix "integrations_node_exporter" {
-  // Disable unnecessary collectors to reduce overhead
   disable_collectors = ["ipvs", "btrfs", "infiniband", "xfs", "zfs"]
   enable_collectors = ["meminfo"]
 
   filesystem {
-    // Exclude filesystem types that aren't relevant for monitoring
     fs_types_exclude     = "^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|tmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$"
-    // Exclude mount points that aren't relevant for monitoring
     mount_points_exclude = "^/(dev|proc|run/credentials/.+|sys|var/lib/docker/.+)($|/)"
-    // Timeout for filesystem operations
     mount_timeout        = "5s"
   }
 
   netclass {
-    // Ignore virtual and container network interfaces
     ignored_devices = "^(veth.*|cali.*|[a-f0-9]{15})$"
   }
 
   netdev {
-    // Exclude virtual and container network interfaces from device metrics
     device_exclude = "^(veth.*|cali.*|[a-f0-9]{15})$"
   }
-
-
 }
 
-// Define how to scrape metrics from the node_exporter
 prometheus.scrape "integrations_node_exporter" {
-scrape_interval = "15s"
-  // Use the targets with labels from the discovery.relabel component
+  scrape_interval = "15s"
   targets    = discovery.relabel.integrations_node_exporter.output
-  // Send the scraped metrics to the relabeling component
   forward_to = [prometheus.remote_write.local.receiver]
 }
 
+// LOGS SYSTEM
 
-// Define where to send the metrics for storage
-prometheus.remote_write "local" {
-  endpoint {
-    // Send metrics to a locally running Prometheus instance
-    url = "http://localhost:9090/api/v1/write"
-  }
-}
-
-// Collect logs from systemd journal for node_exporter integration
-loki.source.journal "logs_integrations_integrations_node_exporter_journal_scrape" {
-  // Only collect logs from the last 24 hours
+loki.source.journal "journal" {
   max_age       = "24h0m0s"
-  // Apply relabeling rules to the logs
-  relabel_rules = discovery.relabel.logs_integrations_integrations_node_exporter_journal_scrape.rules
-  // Send logs to the local Loki instance
+  relabel_rules = discovery.relabel.journal.rules
   forward_to    = [loki.write.local.receiver]
+  path          = "/var/log/journal"
+  labels        = {component = "journal"}
 }
 
-// Define which log files to collect for node_exporter
-local.file_match "logs_integrations_integrations_node_exporter_direct_scrape" {
+local.file_match "system" {
   path_targets = [{
-    // Target localhost for log collection
     __address__ = "localhost",
-    // Collect standard system logs
     __path__    = "/var/log/{syslog,messages,*.log}",
-    // Add instance label with hostname
     instance    = constants.hostname,
-    // Add job label for logs
-    job         = "integrations/node_exporter",
+    job         = "system-logs",
   }]
 }
 
-// Define relabeling rules for systemd journal logs
-discovery.relabel "logs_integrations_integrations_node_exporter_journal_scrape" {
+discovery.relabel "journal" {
   targets = []
 
   rule {
-    // Extract systemd unit information into a label
     source_labels = ["__journal__systemd_unit"]
     target_label  = "unit"
   }
 
   rule {
-    // Extract boot ID information into a label
     source_labels = ["__journal__boot_id"]
     target_label  = "boot_id"
   }
 
   rule {
-    // Extract transport information into a label
     source_labels = ["__journal__transport"]
     target_label  = "transport"
   }
 
   rule {
-    // Extract log priority into a level label
     source_labels = ["__journal_priority_keyword"]
     target_label  = "level"
   }
 }
 
-// Collect logs from files for node_exporter
-loki.source.file "logs_integrations_integrations_node_exporter_direct_scrape" {
-  // Use targets defined in local.file_match
-  targets    = local.file_match.logs_integrations_integrations_node_exporter_direct_scrape.targets
-  // Send logs to the local Loki instance
+loki.source.file "system" {
+  targets    = local.file_match.system.targets
   forward_to = [loki.write.local.receiver]
 }
 
-// Define where to send logs for storage
-loki.write "local" {
-    endpoint {
-        // Send logs to a locally running Loki instance
-        url ="http://localhost:3100/loki/api/v1/push"
-    }
+// source: https://github.com/grafana/alloy-scenarios/blob/main/docker-monitoring/config.alloy
+// METRICS DOCKER
+
+prometheus.exporter.cadvisor "dockermetrics" {
+  docker_host = "unix:///var/run/docker.sock"
+  storage_duration = "5m"
 }
 
-// Enable live debugging features (empty config means use defaults)
-livedebugging{}
+prometheus.relabel "docker_filter" {
+  forward_to = [prometheus.remote_write.local.receiver]
+  
+  rule {
+    source_labels = ["__name__"]
+    regex = "container_spec_(cpu_period|cpu_quota|cpu_shares|memory_limit_bytes|memory_swap_limit_bytes|memory_reservation_limit_bytes)"
+    action = "drop"
+  }
+}
+
+prometheus.scrape "dockermetrics" {
+  targets    = prometheus.exporter.cadvisor.dockermetrics.targets
+  forward_to = [prometheus.relabel.docker_filter.receiver]
+  scrape_interval = "10s"
+}
+
+
+// LOGS DOCKER
+
+discovery.docker "dockerlogs" {
+  host = "unix:///var/run/docker.sock"
+}
+
+discovery.relabel "dockerlogs" {
+  targets = []
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex = "/(.*)"
+    target_label = "service_name"
+  }
+}
+
+loki.source.docker "local" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.docker.dockerlogs.targets
+  labels     = {"platform" = "docker"}
+  relabel_rules = discovery.relabel.dockerlogs.rules
+  forward_to = [loki.write.local.receiver]
+}

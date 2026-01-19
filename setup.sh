@@ -43,18 +43,18 @@ AUTHENTIK_SERVER_CONTAINER="authentik-server"
 AUTHENTIK_POSTGRESQL_CONTAINER="authentik-postgresql"
 AUTHENTIK_WORKER_CONTAINER="authentik-worker"
 
-GRAFANA_DIR="${ROOT_DIR}/grafana-dummy"
-GRAFANA_CONTAINER="grafana-dummy"
+GRAFANA_DIR="${ROOT_DIR}/grafana"
+GRAFANA_CONTAINER="grafana"
 GRAFANA_BACKUP_FILENAME="grafana_backup.tar.gz"
 GRAFANA_BACKUP_FILE="${BACKUP_DIR}/${GRAFANA_BACKUP_FILENAME}"
 
-HEADSCALE_DIR="${ROOT_DIR}/headscale-dummy"
-HEADSCALE_CONTAINER="headscale-dummy"
+HEADSCALE_DIR="${ROOT_DIR}/headscale"
+HEADSCALE_CONTAINER="headscale"
 HEADSCALE_BACKUP_FILENAME="headscale_backup.tar.gz"
 HEADSCALE_BACKUP_FILE="${BACKUP_DIR}/${HEADSCALE_BACKUP_FILENAME}"
 
-UPTIME_KUMA_DIR="${ROOT_DIR}/uptime-kuma-dummy"
-UPTIME_KUMA_CONTAINER="uptime-kuma-dummy"
+UPTIME_KUMA_DIR="${ROOT_DIR}/uptime-kuma"
+UPTIME_KUMA_CONTAINER="uptime-kuma"
 UPTIME_KUMA_BACKUP_FILENAME="uptime_kuma_backup.tar.gz"
 UPTIME_KUMA_BACKUP_FILE="${BACKUP_DIR}/${UPTIME_KUMA_BACKUP_FILENAME}"
 
@@ -141,9 +141,9 @@ restore_uptime_kuma() {
 backup() {
     #assert_dir_not_exists "$BACKUP_DIR"
     mkdir -p "$BACKUP_DIR"
-    #backup_authentik
-    #backup_grafana
-    #backup_headscale
+    backup_authentik
+    backup_grafana
+    backup_headscale
     backup_uptime_kuma
 }
 
@@ -157,9 +157,9 @@ restore() {
     echo "Restore directory: $RESTORE_DIR"
     assert_dir_exists "$RESTORE_DIR"
 
-    #restore_authentik
-    #restore_grafana
-    #restore_headscale
+    restore_authentik
+    restore_grafana
+    restore_headscale
     restore_uptime_kuma
 }
 
