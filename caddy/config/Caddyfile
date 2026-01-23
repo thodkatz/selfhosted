@@ -38,7 +38,6 @@ auth.thodkatz.com {
     reverse_proxy http://authentik-server:9000
 }
 
-
 seafile.thodkatz.ts.net {
     tls internal
     reverse_proxy http://seafile:80
@@ -62,4 +61,56 @@ uptime-kuma.thodkatz.ts.net {
 wud.thodkatz.ts.net {
     tls internal
     reverse_proxy http://wud:3000
+}
+
+http://ente.thodkatz.ts.net {
+    log {
+        output stdout
+        format console
+    }
+    reverse_proxy http://ente-web:3000
+}
+
+http://api.ente.thodkatz.ts.net {
+    log {
+        output stdout
+        format console
+    }
+    reverse_proxy http://ente-museum:8080
+}
+
+# http://ente.thodkatz.ts.net {
+#     @api path /api/*
+#     handle @api {
+#         uri strip_prefix /api
+#         reverse_proxy http://ente-museum:8080
+#     }
+
+#     reverse_proxy http://ente-web:3000
+# }
+
+
+http://api.minio.ente.thodkatz.ts.net {
+    # an attempt to fix CORS issues with MinIO and Ente
+    # @preflight method OPTIONS
+    # handle @preflight {
+    #     header Access-Control-Allow-Origin "*"
+    #     header Access-Control-Allow-Methods "GET, PUT, POST, DELETE, HEAD, OPTIONS"
+    #     header Access-Control-Allow-Headers "*"
+    #     header Access-Control-Max-Age "3000"
+    #     header Vary "Origin"
+    #     respond "" 204
+    # }
+
+    # header {
+    #     Access-Control-Allow-Origin "*"
+    #     Access-Control-Expose-Headers "ETag"
+    #     Vary "Origin"
+    # }
+    reverse_proxy http://ente-minio:3200
+}
+
+https://minio.ente.thodkatz.ts.net {
+    tls internal
+    reverse_proxy http://ente-minio:3201
 }

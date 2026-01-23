@@ -99,8 +99,13 @@ backup_uptime_kuma() {
     docker start ${UPTIME_KUMA_CONTAINER}
 }
 
+restore_common() {
+    mkdir -p $1/data $1/config
+}
+
 
 restore_authentik() {
+    restore_common ${AUTHENTIK_DIR}
     AUTHENTIK_RESTORE_POSTGRES_FILE="${RESTORE_DIR}/${AUTHENTIK_POSTGRES_BACKUP_FILENAME}"
     tar -xzf ${AUTHENTIK_ENV_BACKUP_FILE} -C ${AUTHENTIK_DIR}
     docker compose -f ${AUTHENTIK_DIR}/docker-compose.yaml up -d
@@ -114,6 +119,7 @@ restore_authentik() {
 }
 
 restore_grafana() {
+    restore_common ${GRAFANA_DIR}
     GRAFANA_RESTORE_FILE="${RESTORE_DIR}/${GRAFANA_BACKUP_FILENAME}"
     echo "Restoring Grafana backup..."
     tar -xzf ${GRAFANA_RESTORE_FILE} -C ${GRAFANA_DIR}
@@ -123,6 +129,7 @@ restore_grafana() {
 }
 
 restore_headscale() {
+    restore_common ${HEADSCALE_DIR}
     HEADSCALE_RESTORE_FILE="${RESTORE_DIR}/${HEADSCALE_BACKUP_FILENAME}"
     echo "Restoring Headscale backup..."
     tar -xzf ${HEADSCALE_RESTORE_FILE} -C ${HEADSCALE_DIR}
@@ -131,6 +138,7 @@ restore_headscale() {
 }
 
 restore_uptime_kuma() {
+    restore_common ${UPTIME_KUMA_DIR}
     UPTIME_KUMA_RESTORE_FILE="${RESTORE_DIR}/${UPTIME_KUMA_BACKUP_FILENAME}"
     echo "Restoring Uptime Kuma backup..."
     tar -xzf ${UPTIME_KUMA_RESTORE_FILE} -C ${UPTIME_KUMA_DIR}

@@ -275,7 +275,7 @@ dns:
   # `base_domain` must be a FQDN, without the trailing dot.
   # The FQDN of the hosts will be
   # `hostname.base_domain` (e.g., _myhost.example.com_).
-  base_domain: thodkatz.ts.net.com
+  base_domain: thodkatz.ts.net
 
   # Whether to use the local DNS settings of a node or override the local DNS
   # settings (default) and force the use of Headscale's DNS configuration.
@@ -325,6 +325,19 @@ dns:
     - name: "wud.thodkatz.ts.net"
       type: "A"
       value: "100.64.0.2"
+    - name: "ente.thodkatz.ts.net"
+      type: "A"
+      value: "100.64.0.2"
+    - name: "api.ente.thodkatz.ts.net"
+      type: "A"
+      value: "100.64.0.2"
+    - name: "minio.ente.thodkatz.ts.net"
+      type: "A"
+      value: "100.64.0.2"
+    - name: "api.minio.ente.thodkatz.ts.net"
+      type: "A"
+      value: "100.64.0.2"
+  # Example of more records:
   #   - name: "grafana.myvpn.example.com"
   #     type: "A"
   #     value: "100.64.0.3"
