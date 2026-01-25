@@ -1,0 +1,3 @@
+# Set the API endpoint to your domain where Museum is being served.
+endpoint:
+    api: http://api.ente.thodkatz.ts.net

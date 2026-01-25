@@ -9,7 +9,7 @@ services:
         condition: service_healthy
     volumes:
       - ./credentials/museum.yaml:/museum.yaml:ro
-      - ./data:/data:ro
+      - ./data/museum:/data:ro
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/ping"]
       interval: 60s
@@ -94,7 +94,6 @@ services:
     networks:
       - reverseproxy-nw
       - default
-
 
 volumes:
   postgres-data:

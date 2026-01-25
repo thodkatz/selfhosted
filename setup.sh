@@ -1,5 +1,9 @@
 #!/bin/bash
 # some bind mounts may need root access
+#
+# I am testing this by backing up the current containers and then create new ones appending -dummy 
+# to the names by modifying the docker-compose files temporarily and the current container variables and directories
+
 if [[ $EUID -ne 0 ]]; then
    echo "This script must be run as root. Use sudo."
    exit 1
@@ -58,19 +62,37 @@ UPTIME_KUMA_CONTAINER="uptime-kuma"
 UPTIME_KUMA_BACKUP_FILENAME="uptime_kuma_backup.tar.gz"
 UPTIME_KUMA_BACKUP_FILE="${BACKUP_DIR}/${UPTIME_KUMA_BACKUP_FILENAME}"
 
-backup_authentik() {
-    echo "Creating Authentik backup..."
-    docker start ${AUTHENTIK_POSTGRESQL_CONTAINER}
+ENTE_DIR="${ROOT_DIR}/ente"
+ENTE_BACKUP_FILENAME=
+ENTE_POSTGRES_BACKUP_FILENAME="ente_postgres_backup.gz"
+ENTE_POSTGRES_BACKUP_FILE="${BACKUP_DIR}/${ENTE_POSTGRES_BACKUP_FILENAME}"
+ENTE_BACKUP_FILE="${BACKUP_DIR}/ente_backup.tar.gz"
+ENTE_POSTGRES_CONTAINER="ente-postgres"
+ENTE_MUSEUM_CONTAINER="ente-museum"
+ENTE_WEB_CONTAINER="ente-web"
+ENTE_MINIO_CONTAINER="ente-minio"
+ENTE_MINIO_VOLUME="ente_minio-data"
+ENTE_SQL_USER="pguser"
+ENTE_SQL_NAME="ente_db"
 
+backup_postgres() {
     # Wait for PostgreSQL to be ready if it was paused
-    until docker exec ${AUTHENTIK_POSTGRESQL_CONTAINER} pg_isready -U ${AUTHENTIK_SQL_USER} -d ${AUTHENTIK_SQL_NAME} &>/dev/null; do
+    docker start $1
+    until docker exec $1 pg_isready -U $2 -d $3 &>/dev/null; do
         echo "Waiting for PostgreSQL to start..."
         sleep 1
     done
 
-    docker exec ${AUTHENTIK_POSTGRESQL_CONTAINER} pg_dumpall -U ${AUTHENTIK_SQL_USER} | gzip > ${AUTHENTIK_POSTGRES_BACKUP_FILE}
+    docker exec $1 pg_dumpall -U $2 | gzip > $4
+}
+
+backup_authentik() {
+    echo "Creating Authentik backup..."
+    docker stop ${AUTHENTIK_SERVER_CONTAINER} ${AUTHENTIK_WORKER_CONTAINER}
+    backup_postgres ${AUTHENTIK_POSTGRESQL_CONTAINER} ${AUTHENTIK_SQL_USER} ${AUTHENTIK_SQL_NAME} ${AUTHENTIK_POSTGRES_BACKUP_FILE}
     tar -czf ${AUTHENTIK_ENV_BACKUP_FILE} -C ${AUTHENTIK_DIR} .env
     echo "Authentik backup created at $AUTHENTIK_POSTGRES_BACKUP_FILE and $AUTHENTIK_ENV_BACKUP_FILE"
+    docker start ${AUTHENTIK_SERVER_CONTAINER} ${AUTHENTIK_WORKER_CONTAINER}
 }
 
 backup_grafana() {
@@ -99,10 +121,38 @@ backup_uptime_kuma() {
     docker start ${UPTIME_KUMA_CONTAINER}
 }
 
+backup_ente() {
+    echo "Creating Ente backup..."
+    # Placeholder for Ente backup logic
+    tar -czf ${ENTE_BACKUP_FILE} -C ${ENTE_DIR} credentials/museum.yaml .env config/cli/ente-cli.db secrets.txt
+    docker stop ${ENTE_MUSEUM_CONTAINER} ${ENTE_WEB_CONTAINER} ${ENTE_MINIO_CONTAINER}
+    backup_postgres ${ENTE_POSTGRES_CONTAINER} ${ENTE_SQL_USER} ${ENTE_SQL_NAME} ${ENTE_POSTGRES_BACKUP_FILE}
+    docker run --rm -v ${ENTE_MINIO_VOLUME}:/data -v ${BACKUP_DIR}:/backup alpine tar -czf /backup/ente_minio_backup.tar.gz -C /data .
+    echo "Ente backup created."
+    docker start ${ENTE_MUSEUM_CONTAINER} ${ENTE_WEB_CONTAINER} ${ENTE_MINIO_CONTAINER}
+}
+
 restore_common() {
     mkdir -p $1/data $1/config
 }
 
+restore_ente() {
+    restore_common ${ENTE_DIR}
+    ENTE_RESTORE_POSTGRES_FILE="${RESTORE_DIR}/${ENTE_POSTGRES_BACKUP_FILENAME}"
+    echo "Restoring Ente backup..."
+    tar -xzf ${ENTE_BACKUP_FILE} -C ${ENTE_DIR}
+    docker compose -f ${ENTE_DIR}/docker-compose.yaml up -d
+    docker stop ${ENTE_MUSEUM_CONTAINER} ${ENTE_WEB_CONTAINER} ${ENTE_MINIO_CONTAINER}
+    docker start ${ENTE_POSTGRES_CONTAINER}
+    docker exec -i ${ENTE_POSTGRES_CONTAINER} psql -U ${ENTE_SQL_USER} -d postgres -c "DROP DATABASE ${ENTE_SQL_NAME};"
+    docker exec -i ${ENTE_POSTGRES_CONTAINER} psql -U ${ENTE_SQL_USER} -d postgres -c "CREATE DATABASE ${ENTE_SQL_NAME};"
+    echo "Restoring Ente PostgreSQL database..."
+    echo ${ENTE_RESTORE_POSTGRES_FILE}
+    gunzip -c ${ENTE_RESTORE_POSTGRES_FILE} | docker exec -i ${ENTE_POSTGRES_CONTAINER} psql -U ${ENTE_SQL_USER} -d postgres
+    docker run --rm -v ${ENTE_MINIO_VOLUME}:/data -v ${RESTORE_DIR}:/backup alpine sh -c "cd /data && tar -xzf /backup/ente_minio_backup.tar.gz"
+    echo "Ente restored from $ENTE_BACKUP_FILE and $ENTE_RESTORE_POSTGRES_FILE"
+    docker start ${ENTE_MUSEUM_CONTAINER} ${ENTE_WEB_CONTAINER} ${ENTE_MINIO_CONTAINER}
+}
 
 restore_authentik() {
     restore_common ${AUTHENTIK_DIR}
@@ -113,7 +163,7 @@ restore_authentik() {
     docker start ${AUTHENTIK_POSTGRESQL_CONTAINER}
     docker exec -i ${AUTHENTIK_POSTGRESQL_CONTAINER} psql -U ${AUTHENTIK_SQL_USER} -d postgres -c "DROP DATABASE ${AUTHENTIK_SQL_NAME};"
     docker exec -i ${AUTHENTIK_POSTGRESQL_CONTAINER} psql -U ${AUTHENTIK_SQL_USER} -d postgres -c "CREATE DATABASE ${AUTHENTIK_SQL_NAME};"
-    gunzip -c ${AUTHENTIK_RESTORE_POSTGRES_FILE} | docker exec -i ${AUTHENTIK_POSTGRESQL_CONTAINER} psql -U ${AUTHENTIK_SQL_USER}
+    gunzip -c ${AUTHENTIK_RESTORE_POSTGRES_FILE} | docker exec -i ${AUTHENTIK_POSTGRESQL_CONTAINER} psql -U ${AUTHENTIK_SQL_USER} -d postgres
     echo "Authentik restored from $AUTHENTIK_RESTORE_POSTGRES_FILE and $AUTHENTIK_ENV_BACKUP_FILE"
     docker start ${AUTHENTIK_SERVER_CONTAINER} ${AUTHENTIK_WORKER_CONTAINER}
 }
@@ -153,6 +203,7 @@ backup() {
     backup_grafana
     backup_headscale
     backup_uptime_kuma
+    backup_ente
 }
 
 restore() {
@@ -169,6 +220,7 @@ restore() {
     restore_grafana
     restore_headscale
     restore_uptime_kuma
+    restore_ente
 }
 
 if [ "$1" == "backup" ]; then
