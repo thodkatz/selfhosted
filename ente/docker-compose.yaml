@@ -73,7 +73,7 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     command: server /data --address ":3200" --console-address ":3201"
     volumes:
-      - minio-data:/data
+      - /srv/selfhosted/ente/data/minio:/data
     post_start:
       - command: |
           sh -c '
@@ -97,7 +97,6 @@ services:
 
 volumes:
   postgres-data:
-  minio-data:
 
 networks:
   reverseproxy-nw:

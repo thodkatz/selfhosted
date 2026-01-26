@@ -124,10 +124,10 @@ backup_uptime_kuma() {
 backup_ente() {
     echo "Creating Ente backup..."
     # Placeholder for Ente backup logic
-    tar -czf ${ENTE_BACKUP_FILE} -C ${ENTE_DIR} credentials/museum.yaml .env config/cli/ente-cli.db secrets.txt
+    tar -czf ${ENTE_BACKUP_FILE} -C ${ENTE_DIR} credentials/museum.yaml .env config/cli/ente-cli.db secrets.txt data/minio/
     docker stop ${ENTE_MUSEUM_CONTAINER} ${ENTE_WEB_CONTAINER} ${ENTE_MINIO_CONTAINER}
     backup_postgres ${ENTE_POSTGRES_CONTAINER} ${ENTE_SQL_USER} ${ENTE_SQL_NAME} ${ENTE_POSTGRES_BACKUP_FILE}
-    docker run --rm -v ${ENTE_MINIO_VOLUME}:/data -v ${BACKUP_DIR}:/backup alpine tar -czf /backup/ente_minio_backup.tar.gz -C /data .
+    #docker run --rm -v ${ENTE_MINIO_VOLUME}:/data -v ${BACKUP_DIR}:/backup alpine tar -czf /backup/ente_minio_backup.tar.gz -C /data .
     echo "Ente backup created."
     docker start ${ENTE_MUSEUM_CONTAINER} ${ENTE_WEB_CONTAINER} ${ENTE_MINIO_CONTAINER}
 }
@@ -149,7 +149,7 @@ restore_ente() {
     echo "Restoring Ente PostgreSQL database..."
     echo ${ENTE_RESTORE_POSTGRES_FILE}
     gunzip -c ${ENTE_RESTORE_POSTGRES_FILE} | docker exec -i ${ENTE_POSTGRES_CONTAINER} psql -U ${ENTE_SQL_USER} -d postgres
-    docker run --rm -v ${ENTE_MINIO_VOLUME}:/data -v ${RESTORE_DIR}:/backup alpine sh -c "cd /data && tar -xzf /backup/ente_minio_backup.tar.gz"
+    #docker run --rm -v ${ENTE_MINIO_VOLUME}:/data -v ${RESTORE_DIR}:/backup alpine sh -c "cd /data && tar -xzf /backup/ente_minio_backup.tar.gz"
     echo "Ente restored from $ENTE_BACKUP_FILE and $ENTE_RESTORE_POSTGRES_FILE"
     docker start ${ENTE_MUSEUM_CONTAINER} ${ENTE_WEB_CONTAINER} ${ENTE_MINIO_CONTAINER}
 }
