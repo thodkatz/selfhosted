@@ -114,3 +114,8 @@ https://minio.ente.thodkatz.ts.net {
     tls internal
     reverse_proxy http://ente-minio:3201
 }
+
+stirling-pdf.thodkatz.ts.net {
+    tls internal
+    reverse_proxy http://stirling-pdf:8080
+}

@@ -337,6 +337,9 @@ dns:
     - name: "api.minio.ente.thodkatz.ts.net"
       type: "A"
       value: "100.64.0.2"
+    - name: "stirling-pdf.thodkatz.ts.net"
+      type: "A"
+      value: "100.64.0.2"
   # Example of more records:
   #   - name: "grafana.myvpn.example.com"
   #     type: "A"
