@@ -75,6 +75,10 @@ ENTE_MINIO_VOLUME="ente_minio-data"
 ENTE_SQL_USER="pguser"
 ENTE_SQL_NAME="ente_db"
 
+backup_bashrc() {
+    cp ~/.bashrc ${BACKUP_DIR}/bashrc_backup
+}
+
 backup_postgres() {
     # Wait for PostgreSQL to be ready if it was paused
     docker start $1
@@ -134,6 +138,10 @@ backup_ente() {
 
 restore_common() {
     mkdir -p $1/data $1/config
+}
+
+restore_bashrc() {
+    cp ${RESTORE_DIR}/bashrc_backup ~/.bashrc
 }
 
 restore_ente() {
@@ -199,6 +207,7 @@ restore_uptime_kuma() {
 backup() {
     #assert_dir_not_exists "$BACKUP_DIR"
     mkdir -p "$BACKUP_DIR"
+    backup_bashrc
     backup_authentik
     backup_grafana
     backup_headscale
@@ -216,6 +225,7 @@ restore() {
     echo "Restore directory: $RESTORE_DIR"
     assert_dir_exists "$RESTORE_DIR"
 
+    restore_bashrc
     restore_authentik
     restore_grafana
     restore_headscale
